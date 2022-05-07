@@ -1,5 +1,6 @@
 import socket
 from sys import argv
+import logging
 
 PORT = 5555
 
@@ -18,6 +19,7 @@ class Client:
 				print("Connecting to the game server...")
 				self.client_socket.settimeout(10)
 				self.client_socket.connect((address, int(port_number)))
+				self.client_socket.settimeout(None) 
 				return True
 			except:
 				print("There is an error when trying to connect to " + str(address) + "::" + str(port_number))

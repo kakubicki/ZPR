@@ -5,6 +5,7 @@ from sys import argv
 import logging
 
 PORT = 5555
+#refactoring liter na slowa bo jest nieczytelne
 
 #Set up logging to file
 logging.basicConfig(level=logging.DEBUG,
@@ -34,7 +35,7 @@ class Server:
 				break
 			except:
 				logging.warning("There is an error when trying to bind " + str(port_number))
-				choice = input("[A]bort, [C]hange port, or [R]etry?")
+				choice = input("[A]bort or [C]hange port?")
 				if(choice.lower() == "a"):
 					exit()
 				elif(choice.lower() == "c"):
@@ -68,11 +69,12 @@ class ServerGame(Server):
 			self.waiting_players.append(new_player)
 
 			try:
-				threading.Thread(target=self.__client_thread, args=(new_player,)).start()
+				threading.Thread(target=self.__client_thread, args=(new_player,)).start() 
+				logging.info("Started a new Thread")
 			except:
 				logging.error("Failed to create thread.")
 
-	def __client_thread(self, player):
+	def __client_thread(self, player): 
 		"""(Private) This is the client thread."""
 		try:
 			player.send("A", str(player.id))
@@ -93,18 +95,21 @@ class ServerGame(Server):
 					new_game.board_content = list("         ")
 
 					try:
-						new_game.start()
+						#new_game.start() #to musi zostac utworzone w nowym watku tak jak thread
+						threading.Thread(target=new_game.start(), args=()).start()
 					except:
 						logging.warning("Game between " + str(new_game.player1.id) + " and " + str(new_game.player2.id) + " is finished unexpectedly.")
 					return
 		except:
 			print("Player " + str(player.id) + " disconnected.")
-		finally:
-			self.waiting_players.remove(player)
+		return 
+		#finally:
+			#self.waiting_players.remove(player)
+			#logging.info("Removing player " + str(player.id) + " from the waiting list") #zastosować do kazdej linijki i bczaic jak co działa 
 
 	def matching_player(self, player):
 		"""Goes through the players list and try to match the player with another player who is also waiting to play. Returns any matched player if found."""
-		self.lock_matching.acquire()
+		self.lock_matching.acquire() #moliwosc przetwarzania tylko jednego gracza na raz, laczenie z drugim graczem, zwraca tylko jesli p 
 		try:
 			for p in self.waiting_players:
 				if(p.is_waiting and p is not player):
@@ -147,9 +152,11 @@ class Player:
 			# If received a quit signal from the client
 			if(msg[0] == "q"):
 				logging.info(msg[1:])
+				logging.info("Message quit")
 				self.__connection_lost()
 			# If the message is not the expected type
 			elif(msg[0] != expected_type):
+				logging.info("Message is not the expected type")
 				self.__connection_lost()
 			# If received an integer from the client
 			elif(msg[0] == "i"):
@@ -199,9 +206,10 @@ class Game:
 
 		while True:
 			if(self.move(self.player1, self.player2)):
-				return
+				break
 			if(self.move(self.player2, self.player1)):
-				return
+				break
+		logging.info("Game finished")
 
 	def move(self, moving_player, waiting_player):
 		"""Lets a player make a move."""
@@ -222,6 +230,7 @@ class Game:
 		if(result >= 0):
 			moving_player.send("B", ("".join(self.board_content)))
 			waiting_player.send("B", ("".join(self.board_content)))
+			logging.info("Moving result" + result)
 
 			if(result == 0):
 				# If this game ends with a draw
@@ -276,7 +285,7 @@ def main():
 		port_number = PORT
 
 	try:
-		server = ServerGame()
+		server = ServerGame() # while, petla dla kazdego nowego gracza (czy mona zrobić takich serverów nieskonczenie wiele), jednak jeden 
 		server.bind(port_number)
 		server.start()
 		server.close()
