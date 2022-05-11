@@ -99,16 +99,16 @@ class ClientGame(Client):
 
 	def start_game(self):
 		"""Starts the game and gets basic game information from the server."""
-		self.player_id = int(self.s_recv(128, "A"))
-		self.s_send("c","1")
+		self.player_id = int(self.s_recv(128, "A")) #Receive the player's ID from the server
+		self.s_send("c","1") #Confirm the ID has been received
 
 		self.__connected__()
 
-		self.role = str(self.s_recv(2, "R"))
-		self.s_send("c","2")
+		self.role = str(self.s_recv(2, "R")) #Receive the assigned role from the server
+		self.s_send("c","2") #Confirm the assigned role has been received
 
-		self.match_id = int(self.s_recv(128, "I"))
-		self.s_send("c","3")
+		self.match_id = int(self.s_recv(128, "I")) #Receive the mactched player's ID from the server
+		self.s_send("c","3") #Confirm the mactched player's ID has been received
 
 		print(("You are now matched with player " + str(self.match_id) + "\nYou are the \"" + self.role + "\""))
 
@@ -128,27 +128,27 @@ class ClientGame(Client):
 	def __main_loop(self):
 		"""The main game loop."""
 		while True:
-			# Get the board content from the server
-			board_content = self.s_recv(10, "B")
-			# Get the command from the server 
-			command = self.s_recv(2, "C")
-			# Update the board
-			self.__update_board__(command, board_content)
+			board_content = self.s_recv(10, "B") #Get the board content from the server 
+			command = self.s_recv(2, "C") #Get the command from the server
+			self.__update_board__(command, board_content) # Update the board
 
 			if(command == "Y"):
-				self.__player_move__(board_content)
+				self.__player_move__(board_content) #If it's this player's turn to move
 			elif(command == "N"):
-				self.__player_wait__()
-				move = self.s_recv(2, "I")
+				self.__player_wait__() #If the player needs to just wait
+				move = self.s_recv(2, "I") #Get the move the other player made from the server 
+				logging.info("odebrano ruch opponenta")
 				self.__opponent_move_made__(move)
 			elif(command == "D"):
-				print("It's a draw.")
+				print("It's a draw.") # If the result is a draw
 				break
 			elif(command == "W"):
+				logging.info("INFO you win")
 				print("You WIN!")
 				self.__draw_winning_path__(self.s_recv(4, "P"))
-				break
+				break # Break the loop and finish
 			elif(command == "L"):
+				logging.info("INFO you lost")
 				print("You lose.")
 				self.__draw_winning_path__(self.s_recv(4, "P"))
 				break
@@ -222,7 +222,8 @@ class ClientGame(Client):
 		#("|7|8|9|");
 		return("|" + s[0] + "|" + s[1]  + "|" + s[2] + "|\n" 
 			+ "|" + s[3] + "|" + s[4]  + "|" + s[5] + "|\n" 
-			+ "|" + s[6] + "|" + s[7]  + "|" + s[8] + "|\n")
+			+ "|" + s[6] + "|" + s[7]  + "|" + s[8] + "|\n") 
+		#skalowalnosc planszy
 
 def main():
 	if(len(argv) >= 3):

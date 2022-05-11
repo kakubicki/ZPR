@@ -81,7 +81,7 @@ class ServerGame(Server):
 			if(player.recv(2, "c") != "1"):
 				logging.warning("Client " + str(player.id) + " didn't confirm the initial message.")
 				return
-
+			#request rozmiaru planszy, zapisuje w graczu, 
 			while player.is_waiting:
 				match_result = self.matching_player(player)
 
@@ -111,7 +111,7 @@ class ServerGame(Server):
 		"""Goes through the players list and try to match the player with another player who is also waiting to play. Returns any matched player if found."""
 		self.lock_matching.acquire() #moliwosc przetwarzania tylko jednego gracza na raz, laczenie z drugim graczem, zwraca tylko jesli p 
 		try:
-			for p in self.waiting_players:
+			for p in self.waiting_players: #check p chce taka sama plansze jak opponent 
 				if(p.is_waiting and p is not player):
 					player.match = p
 					p.match = player
@@ -171,17 +171,16 @@ class Player:
 
 	def check_connection(self):
 		"""Sends a meesage to check if the client is still properly connected."""
-		# Send the client an echo signal to ask it to repeat back
-		self.send("E", "z")
+		self.send("E", "z") # Send the client an echo signal to ask it to repeat back
 		if(self.recv(2, "e") != "z"):
 			self.__connection_lost()
 
 	def send_match_info(self):
 		"""Sends a the matched information to the client, which includes the assigned role and the matched player."""
-		self.send("R", self.role)
-		if(self.recv(2,"c") != "2"):
+		self.send("R", self.role) #Send to client the assigned role
+		if(self.recv(2,"c") != "2"): 
 			self.__connection_lost()
-		self.send("I", str(self.match.id))
+		self.send("I", str(self.match.id)) #Sent to client the matched player's ID
 		if(self.recv(2,"c") != "3"):
 			self.__connection_lost()
 
@@ -218,19 +217,23 @@ class Game:
 		# Y stands for yes it's turn to move and N stands for no and waiting
 		moving_player.send("C", "Y")
 		waiting_player.send("C", "N")
-		move = int(moving_player.recv(2, "i"))
-		waiting_player.send("I", str(move))
+		move = int(moving_player.recv(2, "i")) #Receive the move from the moving player
+		waiting_player.send("I", str(move)) # Send the move to the waiting player
 		if(self.board_content[move - 1] == " "):
 			self.board_content[move - 1] = moving_player.role
 		else:
 			logging.warning("Player " + str(moving_player.id) + " is attempting to take a position that's already been taken.")
 
 		# Check if this will result in a win
-		result, winning_path = self.check_winner(moving_player)
+		#result, winning_path = self.check_winner(moving_player)
+		result = self.check_winner(moving_player)
+		logging.info("Moving result")
 		if(result >= 0):
+			# If there is a result
+			# Send back the latest board content
 			moving_player.send("B", ("".join(self.board_content)))
 			waiting_player.send("B", ("".join(self.board_content)))
-			logging.info("Moving result" + result)
+			#logging.info("Moving result" + result)
 
 			if(result == 0):
 				# If this game ends with a draw
@@ -242,8 +245,8 @@ class Game:
 				# If this player wins the game
 				moving_player.send("C", "W")
 				waiting_player.send("C", "L")
-				moving_player.send("P", winning_path)
-				waiting_player.send("P", winning_path)
+				#moving_player.send("P", winning_path)
+				#waiting_player.send("P", winning_path)
 				print("Player " + str(self.player1.id) + " beats player " + str(self.player2.id) + " and finishes the game.")
 				return True
 			return False
@@ -253,29 +256,29 @@ class Game:
 		s = self.board_content
 
 		if(len(set([s[0], s[1], s[2], player.role])) == 1):
-			return 1, "012"
+			return 1 #, "012"
 		if(len(set([s[3], s[4], s[5], player.role])) == 1):
-			return 1, "345"
+			return 1 #, "345"
 		if(len(set([s[6], s[7], s[8], player.role])) == 1):
-			return 1, "678"
+			return 1 #, "678"
 
 		if(len(set([s[0], s[3], s[6], player.role])) == 1):
-			return 1, "036"
+			return 1 #, "036"
 		if(len(set([s[1], s[4], s[7], player.role])) == 1):
-			return 1, "147"
+			return 1 #, "147"
 		if(len(set([s[2], s[5], s[8], player.role])) == 1):
-			return 1, "258"
+			return 1 #, "258"
 
 		if(len(set([s[0], s[4], s[8], player.role])) == 1):
-			return 1, "048"
+			return 1 #, "048"
 		if(len(set([s[2], s[4], s[6], player.role])) == 1):
-			return 1, "246"
+			return 1 #, "246"
 
 		# If there's no empty position left, draw
 		if " " not in s:
-			return 0, ""
+			return 0 #, ""
 
-		return -1, ""
+		return -1 #, ""
 
 def main():
 	if(len(argv) >= 2):
